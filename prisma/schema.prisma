@@ -18,3 +18,146 @@ enum UserStatus {
   BLOCKED
   DELETED
 }
+
+model User {
+  userId    String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  role      UserRole   @default(CUSTOMER)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  vendor    Vendor?
+  customer  Customer?
+
+  @@map("users")
+}
+
+model Vendor {
+  vendorId      String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  images        String?
+  description   String?
+  contactNumber String?
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [email], references: [email])
+
+  products Products[]
+
+  @@map("vendors")
+}
+
+model Customer {
+  customerId    String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  images        String?
+  contactNumber String
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [email], references: [email])
+
+  cart Cart[]
+
+  @@map("customers")
+}
+
+model MainCategory {
+  mainCategoryId    String              @id @default(uuid())
+  mainCategoryName  String              @unique
+  images            String?
+  isDeleted         Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  subCategory       SubCategory[]
+  nestedSubCategory NestedSubCategory[]
+  products          Products[]
+
+  @@map("mainCategory")
+}
+
+model SubCategory {
+  subCategoryId   String   @id @default(uuid())
+  subCategoryName String   @unique
+  mainCategoryId  String
+  images          String?
+  isDeleted       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  mainCategory MainCategory @relation(fields: [mainCategoryId], references: [mainCategoryId])
+
+  nestedSubCategory NestedSubCategory[]
+  products          Products[]
+
+  @@map("subCategory")
+}
+
+model NestedSubCategory {
+  nestedSubCategoryId   String   @id @default(uuid())
+  nestedSubCategoryName String   @unique
+  mainCategoryId        String
+  subCategoryId         String
+  images                String?
+  isDeleted             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  mainCategory MainCategory @relation(fields: [mainCategoryId], references: [mainCategoryId])
+
+  subCategory SubCategory @relation(fields: [subCategoryId], references: [subCategoryId])
+
+  products Products[]
+
+  @@map("nestedSubCategory")
+}
+
+model Products {
+  productId           String   @id @default(uuid())
+  productName         String   @unique
+  description         String?
+  images              String[]
+  price               Int      @default(0)
+  discount            Int?     @default(0)
+  inventory           Int      @default(1)
+  isDeleted           Boolean  @default(false)
+  mainCategoryId      String
+  subCategoryId       String?
+  nestedSubCategoryId String?
+  vendorEmail         String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  vendor Vendor @relation(fields: [vendorEmail], references: [email])
+
+  mainCategory MainCategory @relation(fields: [mainCategoryId], references: [mainCategoryId])
+
+  subCategory SubCategory? @relation(fields: [subCategoryId], references: [subCategoryId])
+
+  nestedSubCategory NestedSubCategory? @relation(fields: [nestedSubCategoryId], references: [nestedSubCategoryId])
+
+  cart Cart[]
+
+  @@map("products")
+}
+
+model Cart {
+  cartId        String   @id @default(uuid())
+  customerEmail String
+  productId     String
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerEmail], references: [email])
+  products Products @relation(fields: [productId], references: [productId])
+
+  @@unique([customerEmail, productId])
+  @@map("cart")
+}
